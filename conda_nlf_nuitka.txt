@@ -1,0 +1,13 @@
+conda create --name nlf_nuitka python=3.13
+
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu130
+
+pip install torch-tensorrt
+
+pip install opencv-python
+
+pip install python-osc
+
+pip install Nuitka
+
+python -m nuitka main.py --mode=standalone --include-data-files="C:\Users\12332\OneDrive\Desktop\workspace\github\nlf\models\end_model.torchscript=.\models\end_model.torchscript" --module-parameter=torch-disable-jit=no --include-module=torch_tensorrt._C --include-package=torch_tensorrt --include-package-data=torch_tensorrt

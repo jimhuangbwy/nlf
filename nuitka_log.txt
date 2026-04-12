@@ -1,0 +1,50 @@
+(nlf) PS C:\Users\12332\OneDrive\Desktop\workspace\github\nlf> python -m nuitka .\webcam_nlf.py --mode=standalone
+Nuitka-Options: Used command line options:
+Nuitka-Options:   .\webcam_nlf.py --mode=standalone
+Nuitka: Starting Python compilation with:
+Nuitka:   Version '2.8.1' on Python 3.10 (flavor 'Anaconda Python') commercial grade 'not installed'.
+Nuitka-Plugins:WARNING: options-nanny: Using module 'tensorflow' (version 2.10.1) with incomplete support due to
+Nuitka-Plugins:WARNING: condition 'version("tensorflow") < (2,16)': 'tensorflow' is not fully supported before version
+Nuitka-Plugins:WARNING: 2.16
+Nuitka-Plugins:WARNING: anti-bloat: Undesirable import of 'Cython' (intending to avoid 'setuptools') in 'cupyx._runtime'
+Nuitka-Plugins:WARNING: (at '~\miniconda3\envs\nlf\lib\site-packages\cupyx\_runtime.py:252') encountered. It may slow
+Nuitka-Plugins:WARNING: down compilation.
+Nuitka-Plugins:WARNING:     Complex topic! More information can be found at
+Nuitka-Plugins:WARNING: https://nuitka.net/info/unwanted-module.html
+Nuitka-Plugins:WARNING: options-nanny: Module 'matplotlib' has plugin consideration: For matplotlib a GUI tooltkit
+Nuitka-Plugins:WARNING: selection might be needed use, use '--enable-plugin=tk-inter|PySide6|PySide2|PyQt6|PyQt5', or
+Nuitka-Plugins:WARNING: use '--enable-plugin=no-qt' for headless mode.
+Nuitka-Plugins:WARNING: options-nanny: Module 'torch' has parameter: Torch JIT is disabled by default in standalone
+Nuitka-Plugins:WARNING: mode, make a choice explicit with '--module-parameter=torch-disable-jit=yes|no'
+Nuitka-Plugins:WARNING: Use '--enable-plugin=dill-compat' for: Missing 'dill' support.
+Nuitka-Plugins:WARNING: anti-bloat: Undesirable import of 'torch.utils.cpp_extension' (intending to avoid 'setuptools')
+Nuitka-Plugins:WARNING: in 'peft.tuners.boft.layer' (at
+Nuitka-Plugins:WARNING: '~\miniconda3\envs\nlf\lib\site-packages\peft\tuners\boft\layer.py:81') encountered. It may slow
+Nuitka-Plugins:WARNING: down compilation.
+Nuitka-Plugins:WARNING:     Complex topic! More information can be found at
+Nuitka-Plugins:WARNING: https://nuitka.net/info/unwanted-module.html
+Nuitka-Plugins:anti-bloat: Not including 'PIL.ImageQt' automatically in order to avoid bloat, but this may cause: PIL
+Nuitka-Plugins:anti-bloat: will not be able to create Qt image objects.
+Nuitka-Plugins:anti-bloat: Not including 'pandas.core._numba.extensions' automatically in order to avoid bloat, but this
+Nuitka-Plugins:anti-bloat: may cause: no numba acceleration.
+Nuitka-Plugins:matplotlib: Using configuration file or default backend 'tkagg'.
+Nuitka: Completed Python level compilation and optimization.
+Nuitka: Generating source code for C backend compiler.
+Nuitka: Running data composer tool for optimal constant value handling.
+Nuitka: Running C compilation via Scons.
+Nuitka-Scons: Backend C compiler: cl (cl 14.3).
+Nuitka-Scons: Backend C linking with 10556 files (no progress information available for this stage).
+Nuitka-Scons: Compiled 10556 C files using clcache with 0 cache hits and 10556 cache misses.
+Nuitka-Plugins:dll-files: Found 1 file DLLs from cv2 installation.
+Nuitka-Plugins:dll-files: Found 4 files DLLs from onnxruntime installation.
+Nuitka-Plugins:dll-files: Found 1 file DLLs from
+Nuitka-Plugins:dll-files: tensorflow.lite.experimental.microfrontend.python.ops.audio_microfrontend_op installation.
+Nuitka-Plugins:dll-files: Found 37 files DLLs from torch installation.
+Nuitka-Plugins:dll-files: Found 3 files DLLs from torchvision installation.
+Nuitka will make use of Dependency Walker (https://dependencywalker.com) tool
+to analyze the dependencies of Python extension modules.
+
+Is it OK to download and put it in 'C:\Users\12332\AppData\Local\Nuitka\Nuitka\Cache\DOWNLO~1\depends\x86_64'.
+
+Fully automatic, cached. Proceed and download? [Yes]/No : Y
+FATAL: Nuitka does not work in --standalone or --onefile on Windows without.
