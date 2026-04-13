@@ -1,18 +1,17 @@
 import numpy as np
 import torch
 import torch.nn as nn
-#from simplepyutils import FLAGS
+from simplepyutils import FLAGS
 
-#from nlf.paths import PROJDIR
+from nlf.paths import PROJDIR
 
 
 def build_field():
-    layer_dims = [384] * 1 + [
-        (512 + 1) * (8 + 2)
+    layer_dims = [FLAGS.field_hidden_size] * FLAGS.field_hidden_layers + [
+        (FLAGS.backbone_link_dim + 1) * (FLAGS.depth + 2)
     ]
-
     gps_net = GPSNet(
-        pos_enc_dim=512, hidden_dim=2048, output_dim=1024
+        pos_enc_dim=512, hidden_dim=2048, output_dim=FLAGS.field_posenc_dim
     )
     return GPSField(gps_net, layer_dims=layer_dims)
 
@@ -20,12 +19,12 @@ def build_field():
 class GPSField(nn.Module):
     def __init__(self, gps_net, layer_dims):
         super().__init__()
-        self.posenc_dim = 1024
+        self.posenc_dim = FLAGS.field_posenc_dim
         self.gps_net = gps_net
 
         # TODO: the first hidden layer's weights should be regularized
         self.pred_mlp = nn.Sequential()
-        self.pred_mlp.append(nn.Linear(1024, layer_dims[0]))
+        self.pred_mlp.append(nn.Linear(FLAGS.field_posenc_dim, layer_dims[0]))
         self.pred_mlp.append(nn.GELU())
         for i in range(1, len(layer_dims) - 1):
             self.pred_mlp.append(nn.Linear(layer_dims[i - 1], layer_dims[i]))
@@ -33,7 +32,7 @@ class GPSField(nn.Module):
         self.pred_mlp.append(nn.Linear(layer_dims[-2], layer_dims[-1]))
         self.r_sqrt_eigva = nn.Buffer(
             torch.rsqrt(
-                torch.tensor(np.load(f'nlf_data_files/canonical_eigval3.npy')[1:], dtype=torch.float32)
+                torch.tensor(np.load(f'{PROJDIR}/canonical_eigval3.npy')[1:], dtype=torch.float32)
             ),
             persistent=False,
         )
@@ -49,7 +48,7 @@ class GPSNet(nn.Module):
     def __init__(self, pos_enc_dim=512, hidden_dim=2048, output_dim=1024):
         super().__init__()
         self.factor = 1 / np.sqrt(np.float32(pos_enc_dim))
-        nodes = np.load(f'nlf_data_files/canonical_nodes3.npy')
+        nodes = np.load(f'{PROJDIR}/canonical_nodes3.npy')
         self.mini = nn.Buffer(
             torch.tensor(np.min(nodes, axis=0), dtype=torch.float32), persistent=False
         )
@@ -85,4 +84,3 @@ class LearnableFourierFeatures(nn.Module):
     def forward(self, inp):
         x = self.linear(inp)
         return torch.cat([torch.sin(x), torch.cos(x)], dim=-1)
-

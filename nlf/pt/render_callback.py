@@ -71,7 +71,7 @@ class RenderPredictionCallback(florch.callbacks.Callback):
                 'cuda', dtype=torch.float16
             ), self.device:
                 self.trainer.eval()
-                pred_vertices, uncerts = self.trainer.model_nlf.predict_multi_same_canonicals(
+                pred_vertices, uncerts = self.trainer.model.predict_multi_same_canonicals(
                     self.image_stack_torch, self.intrinsics, self.canonical_points
                 )
                 pred_vertices = pred_vertices.cpu().numpy() / 1000

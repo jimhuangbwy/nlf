@@ -160,6 +160,23 @@ def auc(x: torch.Tensor, t1: float, t2: float):
     return torch.relu(1.0 - torch.relu(x - t1) / (t2 - t1))
 
 
+# def linspace(start, stop, num, dtype=None, device=None, endpoint=True):
+#     start = torch.as_tensor(start, device=device, dtype=dtype)
+#     stop = torch.as_tensor(stop, device=device, dtype=dtype)
+#
+#     if endpoint:
+#         if num == 1:
+#             return torch.mean(torch.stack([start, stop], dim=0), dim=0, keepdim=True)
+#         else:
+#             return torch.linspace(start, stop, num, device=device, dtype=dtype)
+#     else:
+#         if num > 1:
+#             step = (stop - start) / num
+#             return torch.linspace(start, stop - step, num, device=device, dtype=dtype)
+#         else:
+#             return torch.linspace(start, stop, num, device=device, dtype=dtype)
+
+
 def ramp_function(x: float, start: float, length: float) -> float:
     if x < start:
         return 0.0

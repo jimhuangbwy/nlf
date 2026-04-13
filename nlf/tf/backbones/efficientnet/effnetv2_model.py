@@ -554,9 +554,9 @@ class EffNetV2Model(tf.keras.Model):
         cfg = copy.deepcopy(hparams.base_config)
         if model_name:
             cfg.override(effnetv2_configs.get_model_config(model_name))
-        cfg.model_nlf.override(model_config)
+        cfg.model.override(model_config)
         self.cfg = cfg
-        self._mconfig = cfg.model_nlf
+        self._mconfig = cfg.model
         self.endpoints = None
         self.include_top = include_top
         self._build()

@@ -4,77 +4,59 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**PinoFBT 2.0** — a real-time full body tracking application for VR, built on [Neural Localizer Fields (NLF)](https://arxiv.org/abs/2407.07532) (NeurIPS 2024, Sarandi & Pons-Moll). The app captures webcam video, runs 3D human pose estimation using TensorRT-accelerated models, and streams joint positions over OSC to VR applications (e.g. SteamVR via VMT).
+Neural Localizer Fields (NLF) — a method for continuous 3D human pose and shape estimation from images (NeurIPS 2024, Sárándi & Pons-Moll). The model predicts 3D body pose and shape by learning a neural field over canonical body coordinates, enabling continuous query of any point on the body surface.
 
-This is a fork of the original NLF research codebase, adapted for real-time inference with a GUI and Microsoft Store distribution.
+## Environment Setup
 
-## Two Codebases in One Repo
+- Python 3.10, managed via micromamba (conda env named `nlf`)
+- Install: `envsubst < environment_comfortable_py10.yml > env_subst.yml && micromamba env create --name=nlf --file=env_subst.yml -y`
+- Key external libraries authored by the same group (installed as editable from `$CODE_DIR`): `fleras`, `florch`, `simplepyutils`, `cameralib`, `boxlib`, `poseviz`, `smplfitter`, `rlemasklib`, `barecat3`, `posepile`
+- `simplepyutils.FLAGS` is used throughout as a global flag/config object (argparse-based)
 
-### 1. Original NLF Training Code (`nlf/`)
-- PyTorch (`nlf/pt/`) and TensorFlow (`nlf/tf/`) implementations of NLF
-- Training entry point: `nlf/pt/main.py` with `florch.TrainingJob`
-- Uses `simplepyutils.FLAGS` for configuration, `$DATA_ROOT`/`$PROJDIR` environment variables
-- Not used at runtime by the tracking app
+## Key Environment Variables
 
-### 2. PinoFBT Tracking App (top-level files)
-- **GUI**: `main_UI.py` (PySide6 + qasync + WinRT for MS Store)
-- **Tracker**: `pino_tracker.py` — `PinoTracker` class with threaded capture/inference/display
-- **Standalone**: `main.py` — same pipeline without GUI
-- **TRT runtime**: `onnx_helper.py` (`TRTInference` nn.Module wrapping TensorRT engines)
-- **Models**: `nlf/pt/models/nlf_model_trt.py` (NLFModel reassembled from TRT sub-engines), `nlf/pt/multiperson/multiperson_model_trt.py` (full multi-person pipeline), `nlf/pt/multiperson/person_detector_trt.py` (YOLO detector via TRT)
-- **Trackers**: `nlf/pt/multiperson/nms_tracker.py` (IoU tracker), `nlf/pt/multiperson/single_person_tracker.py`
+- `DATA_ROOT` — root path for datasets, annotations, and experiments (from `posepile.paths`)
+- `PROJDIR` — project-specific data directory, defaults to `$DATA_ROOT/projects/localizerfields` (see `nlf/paths.py`)
+- `CODE_DIR` — root for sibling editable-install packages
 
-## Key Architecture
+## Training (PyTorch)
 
-```
-main_UI.py -> PinoTracker (pino_tracker.py)
-  -> MultipersonNLF (multiperson_model_trt.py)
-       -> PersonDetector (person_detector_trt.py) -> yolo12s.engine
-       -> NLFModel (nlf_model_trt.py)
-            -> backbone.engine, weight_field.engine, layer.engine
-            -> LocalizerHead (heatmap decode + 3D reconstruction in PyTorch)
-  -> OSC Client -> VMT (127.0.0.1:39570)
+```bash
+python -m nlf.pt.main --train --logdir=<name> [flags...]
 ```
 
-The model is decomposed into 4 TensorRT engines:
-- `backbone.engine` — EfficientNetV2 feature extractor (1x3x384x384)
-- `weight_field.engine` — GPS neural field (1048x3 -> conv weights)
-- `layer.engine` — feature post-processing
-- `yolo12s.engine` — YOLO person detector (1x3x640x640)
+Entry point: `nlf/pt/main.py`. Key flags defined in `nlf/pt/init.py:get_parser()` include `--backbone`, `--proc-side`, `--training-steps`, `--batch-size`, `--load-path`, `--checkpoint-dir`, `--multi-gpu`, `--dtype` (default bfloat16). Logs go to `$DATA_ROOT/experiments/<logdir>`.
 
-## Required Folder Structure
+## Code Architecture
 
-```
-models/           # TensorRT .engine files (backbone, weight_field, layer, yolo12s)
-nlf_data_files/   # canonical_eigval3.npy, canonical_nodes3.npy, canonical_verts/, canonical_joints/, body_models_partial_vertex_subset.npy
-```
+### Dual Framework: `nlf/pt/` (PyTorch) and `nlf/tf/` (TensorFlow)
 
-## Key Modifications from Original NLF
+Both implement the same NLF approach with parallel structure. PyTorch is the primary/active codebase.
 
-- `nlf/pt/models/field.py` — hardcoded dimensions (removed FLAGS/PROJDIR dependencies), paths -> `nlf_data_files/`
-- `nlf/pt/multiperson/warping.py` — `n_pyramid_levels` reduced from 3 to 1 for speed
-- Several files: `model` attribute renamed to `model_nlf` to avoid name collisions
-- `nlf/pt/multiperson/person_detector.py` — added `.float()` on model output
+### PyTorch (`nlf/pt/`)
 
-## Export Pipeline
+- **`main.py`** — Training entry point. `LocalizerFieldJob` extends `florch.TrainingJob`, orchestrates data loading, training loop, and rendering.
+- **`init.py`** — CLI argument parsing and initialization. All flags via `simplepyutils.FLAGS`.
+- **`models/nlf_model.py`** — `NLFModel(nn.Module)`: backbone + `LocalizerHead`. Takes image + intrinsic matrix + canonical body points → 3D pose. Handles left/right symmetry of canonical locations.
+- **`models/nlf_trainer.py`** — `NLFTrainer(florch.ModelTrainer)`: manages SMPL/SMPLH/SMPLX body models for ground truth generation during training.
+- **`models/field.py`** — `GPSField` / `GPSNet`: the neural field that maps canonical 3D coordinates to feature space using Laplace-Beltrami operator eigenfunctions.
+- **`backbones/builder.py`** — Factory for image backbones: EfficientNetV2, ResNet, MobileNet, DINOv2.
+- **`loading/`** — Data loaders for different supervision types: `keypoints3d.py`, `keypoints2d.py`, `parametric.py` (SMPL params), `densepose.py`.
+- **`multiperson/`** — Multi-person inference pipeline: person detection, warping, plausibility checks.
+- **`ptu.py` / `ptu3d.py`** — PyTorch utility functions for 2D/3D geometry operations.
 
-To go from pretrained TorchScript to TRT engines:
-1. Extract sub-modules: `export_backbone.py`, `export_weight_field.py`, `export_layer.py`
-2. Convert to ONNX or TorchScript-TRT: `export_backbone_onnx.py` / `export_backbone_trt.py`, etc.
-3. Build TRT engines: `onnx2trt.py` or `export_yolo_trt.py`
+### Shared (`nlf/common/`)
 
-## Running
+- **`augmentation/`** — Image augmentation (color, background, border, appearance).
+- **`improc.py`** — Image processing utilities.
+- **`util.py` / `util3d.py`** — General and 3D geometry utilities.
 
-- GUI: `python main_UI.py`
-- Standalone: `python main.py` or `python pino_tracker.py`
-- OSC target: `127.0.0.1:39570` (VMT protocol)
+### Inference
+
+- `nlf/pt/inference_scripts/` — Benchmark prediction scripts (H36M, 3DPW, MuPoTS, EMDB, SSP-3D).
+- `demo.ipynb` — Usage examples for running pretrained models.
+- Pretrained models available under GitHub Releases (noncommercial research use).
 
 ## Formatting
 
 - Black with `line-length = 99` and `skip-string-normalization = true` (see `pyproject.toml`)
-
-## Platform Notes
-
-- Microsoft Store integration (`main_UI.py`, `ms_store/`) requires Windows + WinRT
-- TensorRT engines are GPU-architecture-specific — must be rebuilt per target GPU
-- Nuitka packaging notes in `conda_nlf_nuitka.txt` and `nuitka_log.txt`

@@ -472,7 +472,7 @@ class AdjustRenormClipping(tf.keras.callbacks.Callback):
 
     def on_train_batch_begin(self, batch, logs=None):
         batch = tf.convert_to_tensor(batch // FLAGS.grad_accum_steps, dtype=tf.float32)
-        renorm_clipping = self.model.model_nlf.normalizer.renorm_clipping
+        renorm_clipping = self.model.model.normalizer.renorm_clipping
         ramp = tfu.ramp_function(batch, self.ramp_start_step, self.ramp_length)
         rmax = 1 + ramp * 2 * FLAGS.renorm_limit_scale  # ramps from 1 to 3
         dmax = ramp * 5 * FLAGS.renorm_limit_scale  # ramps from 0 to 5

@@ -158,7 +158,7 @@ class PersonDetector(nn.Module):
         return boxes, scores
 
     def call_model(self, images):
-        preds = self.model(images.to(dtype=torch.float16)).float()
+        preds = self.model(images.to(dtype=torch.float16))
         preds = torch.permute(preds, [0, 2, 1])  # [batch, n_boxes, 84]
         boxes = preds[..., :4]
         scores = preds[..., 4:]

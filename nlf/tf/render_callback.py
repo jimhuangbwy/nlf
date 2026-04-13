@@ -43,7 +43,7 @@ class RenderPredictionCallback(tf.keras.callbacks.Callback):
     def on_train_batch_end(self, batch, logs=None):
         if batch % self.interval == 0 and batch >= self.start_step:
             step = batch // FLAGS.grad_accum_steps
-            pred_vertices, uncerts = self.model.model_nlf.predict_multi_same_canonicals(
+            pred_vertices, uncerts = self.model.model.predict_multi_same_canonicals(
                 self.image_stack_tf, self.intrinsics, self.canonical_points)
             pred_vertices = pred_vertices.numpy() / 1000
             self.q.put((step, pred_vertices))

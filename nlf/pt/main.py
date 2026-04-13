@@ -911,7 +911,7 @@ class AdjustRenormClipping(florch.callbacks.Callback):
                 module.rmin = 1.0 / rmax
                 module.dmax = dmax
 
-        self.trainer.model_nlf.backbone.apply(set_renorm_clipping)
+        self.trainer.model.backbone.apply(set_renorm_clipping)
 
 
 if __name__ == '__main__':

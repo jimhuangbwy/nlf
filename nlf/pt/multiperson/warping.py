@@ -14,7 +14,7 @@ def warp_images_with_pyramid(
     crop_scales: torch.Tensor,
     output_shape: Tuple[int, int],
     image_ids: torch.Tensor,
-    n_pyramid_levels: int = 1,
+    n_pyramid_levels: int = 3,
 ):
     # Create a very simple pyramid with lower resolution images for simple antialiasing.
     image_levels = [images]
